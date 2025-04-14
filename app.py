@@ -46,10 +46,10 @@ async def reserve(ctx, restaurant_name, date, time):
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            sql = "INSERT INTO reservations (user_id, username, restaurant, reservation_date, reservation_time) VALUES (%s, %s, %s, %s, %s)"
-            cursor.execute(sql, (user_id, username, restaurant_name, date, time))
+            # TODO: Replace this with actual table - create_query = "INSERT INTO reservations (user_id, username, restaurant, reservation_date, reservation_time) VALUES (%s, %s, %s, %s, %s)"
+            # cursor.execute(create_query, (user_id, username, restaurant_name, date, time))
         connection.commit()
-        await ctx.send(f"Reservation confirmed at **{restaurant_name}** on **{date}** at **{time}**.")
+        # TODO: Replace with actual attributes - await ctx.send(f"Reservation confirmed at **{restaurant_name}** on **{date}** at **{time}**.")
     except pymysql.MySQLError as e:
         await ctx.send(f"Error: {e}")
     finally:
