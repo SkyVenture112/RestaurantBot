@@ -11,7 +11,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="$", intents=intents)
 
-# MySQL Connection setup
+# MySQL connection setup
 def get_db_connection():
     connection = pymysql.connect(
         host=os.getenv("MYSQL_HOST"),
@@ -22,12 +22,10 @@ def get_db_connection():
     )
     return connection
 
-# Bot event: on_ready
 @bot.event
 async def on_ready():
     print(f'Logged in as {bot.user}')
 
-# Example command: check database connectivity
 @bot.command(name="testdb")
 async def test_database(ctx):
     try:
@@ -40,7 +38,6 @@ async def test_database(ctx):
     except Exception as e:
         await ctx.send(f"Database connection failed: {e}")
 
-# Example reservation command
 @bot.command(name="reserve")
 async def reserve(ctx, restaurant_name, date, time):
     user_id = ctx.author.id
@@ -49,7 +46,6 @@ async def reserve(ctx, restaurant_name, date, time):
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # Example table schema: reservations(user_id, username, restaurant, reservation_date, reservation_time)
             sql = "INSERT INTO reservations (user_id, username, restaurant, reservation_date, reservation_time) VALUES (%s, %s, %s, %s, %s)"
             cursor.execute(sql, (user_id, username, restaurant_name, date, time))
         connection.commit()
