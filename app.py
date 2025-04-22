@@ -39,17 +39,17 @@ async def test_database(ctx):
         await ctx.send(f"Database connection failed: {e}")
 
 @bot.command(name="reserve")
-async def reserve(ctx, restaurant_name, date, time):
+async def reserve(ctx, date, time):
     user_id = ctx.author.id
     username = ctx.author.name
 
     connection = get_db_connection()
     try:
         with connection.cursor() as cursor:
-            # TODO: Replace this with actual table - create_query = "INSERT INTO reservations (user_id, username, restaurant, reservation_date, reservation_time) VALUES (%s, %s, %s, %s, %s)"
-            # cursor.execute(create_query, (user_id, username, restaurant_name, date, time))
+            # TODO: Replace this with actual table - create_query = "INSERT INTO reservations (reservation_id, reservation_date, customer_id) VALUES (%s, %s, %s)"
+            # cursor.execute(create_query, (customer_id, reservation_date))
         connection.commit()
-        # TODO: Replace with actual attributes - await ctx.send(f"Reservation confirmed at **{restaurant_name}** on **{date}** at **{time}**.")
+        # TODO: Replace with actual attributes - await ctx.send(f"Reservation confirmed on **{date}**.")
     except pymysql.MySQLError as e:
         await ctx.send(f"Error: {e}")
     finally:
