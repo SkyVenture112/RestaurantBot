@@ -26,7 +26,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix=["!", "?"], intents=intents, help_command=None)
 
 # Commands
-@bot.command()
+@bot.command(name="menu")
 async def menu(ctx):
     conn = get_db_connection()
     with conn.cursor() as cursor:
@@ -46,7 +46,7 @@ async def menu(ctx):
             response += f"ID: {item['itemID']} | {item['Name']} - ${item['Price']:.2f}\n"
         await ctx.send(response)
 
-@bot.command()
+@bot.command(name="order")
 async def order(ctx, *item_ids):
     user = str(ctx.author.id)
     conn = get_db_connection()
@@ -107,7 +107,7 @@ async def order(ctx, *item_ids):
 
     await ctx.send(f"Order placed successfully. Total: ${total_amount:.2f}")
 
-@bot.command()
+@bot.command(name="reserve")
 async def reserve(ctx, date, time, party_size: int):
     user = str(ctx.author.id)
     datetime_str = f"{date} {time}"
@@ -150,7 +150,7 @@ async def reserve(ctx, date, time, party_size: int):
 
     await ctx.send(f"Reservation made for {reservation_time} with {party_size} people.")
 
-@bot.command()
+@bot.command(name="feedback")
 async def feedback(ctx, rating: int, *, comment):
     if rating < 1 or rating > 5:
         await ctx.send("Rating must be between 1 and 5 stars.")
@@ -168,7 +168,7 @@ async def feedback(ctx, rating: int, *, comment):
 
     await ctx.send("Thank you for your feedback!")
 
-@bot.command()
+@bot.command(name="add_item")
 @commands.has_permissions(administrator=True)
 async def add_item(ctx, name, price: float, *, description="No description."):
     conn = get_db_connection()
@@ -182,7 +182,7 @@ async def add_item(ctx, name, price: float, *, description="No description."):
 
     await ctx.send(f"Item '{name}' added to the menu.")
 
-@bot.command()
+@bot.command(name="remove_item")
 @commands.has_permissions(administrator=True)
 async def remove_item(ctx, item_id: int):
     conn = get_db_connection()
@@ -197,7 +197,7 @@ async def remove_item(ctx, item_id: int):
 
     await ctx.send(f"Item ID {item_id} marked as unavailable.")
 
-@bot.command()
+@bot.command(name="view_orders")
 @commands.has_permissions(administrator=True)
 async def view_orders(ctx):
     conn = get_db_connection()
@@ -219,7 +219,7 @@ async def view_orders(ctx):
             response += f"Order {order['orderID']} | Customer {order['customerID']} | ${order['totalAmount']:.2f} | Status: {order['status']}\n"
         await ctx.send(response)
 
-@bot.command()
+@bot.command(name="export_sales")
 @commands.has_permissions(administrator=True)
 async def export_sales(ctx):
     conn = get_db_connection()
