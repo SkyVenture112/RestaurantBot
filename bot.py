@@ -3,7 +3,7 @@ from discord.ext import commands
 from datetime import datetime
 import pymysql
 
-DISCORD_TOKEN = "insert token"
+DISCORD_TOKEN = "MTM1OTM2NjY3ODExNDQ2NzkwMA.GosVbz.oF-BWPc_laD61wlzcon1n5vdNfeJfi0sTITeq0"
 MYSQL_HOST = "localhost"
 MYSQL_USER = "root"
 MYSQL_PASSWORD = "Cpsc408!"
