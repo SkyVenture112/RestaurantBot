@@ -185,17 +185,29 @@ async def add_item(ctx, name, price: float, *, description="No description."):
 @bot.command(name="remove_item")
 @commands.has_permissions(administrator=True)
 async def remove_item(ctx, item_id: int):
-    conn = get_db_connection()
-    with conn.cursor() as cursor:
-        cursor.execute("""
-            UPDATE MenuTable
-            SET isAvailable = FALSE
-            WHERE itemID = %s
-        """, (item_id,))
-        conn.commit()
-    conn.close()
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT Name 
+                FROM MenuTable 
+                WHERE itemID = %s
+            """, (item_id,))
+            item = cursor.fetchone()
+            
+            if not item:
+                await ctx.send(f"Item ID {item_id} not found.")
+                conn.close()
+                return
+                
+            cursor.execute("""
+                UPDATE MenuTable
+                SET isAvailable = FALSE
+                WHERE itemID = %s
+            """, (item_id,))
+            conn.commit()
+        conn.close()
 
-    await ctx.send(f"Item ID {item_id} marked as unavailable.")
+        await ctx.send(f"Item ID {item_id} - '{item['Name']}' marked as unavailable.")
 
 @bot.command(name="view_orders")
 @commands.has_permissions(administrator=True)
