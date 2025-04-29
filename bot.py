@@ -25,7 +25,6 @@ intents.messages = True
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-# Commands (same as before)
 @bot.command()
 async def order(ctx, *item_ids):
     user = str(ctx.author.id)
