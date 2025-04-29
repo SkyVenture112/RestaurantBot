@@ -1,65 +1,37 @@
 import discord
 from discord.ext import commands
-import pymysql
-import os
-from dotenv import load_dotenv
 from datetime import datetime
+import pymysql
 
-# Load environment variables
-load_dotenv()
+# Hardcoded configuration
+DISCORD_TOKEN = "MTM1OTM2NjY3ODExNDQ2NzkwMA.G2NgG2.EdJmiEdmzYL3oTSRJxqZkBnvTsM7yo5w72GgUA"
+MYSQL_HOST = "localhost"
+MYSQL_USER = "root"
+MYSQL_PASSWORD = "Cpsc408!"
+MYSQL_DATABASE = "menu"
 
-intents = discord.Intents.default()
-intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents)
-
-# Database connection
+# Database connection function
 def get_db_connection():
     return pymysql.connect(
-        host=os.getenv("MYSQL_HOST"),
-        user=os.getenv("MYSQL_USER"),
-        password=os.getenv("MYSQL_PASSWORD"),
-        database=os.getenv("MYSQL_DATABASE"),
+        host=MYSQL_HOST,
+        user=MYSQL_USER,
+        password=MYSQL_PASSWORD,
+        database=MYSQL_DATABASE,
         cursorclass=pymysql.cursors.DictCursor
     )
 
-@bot.event
-async def on_ready():
-    print(f"Logged in as {bot.user}")
+# Bot setup
+intents = discord.Intents.default()
+intents.messages = True
+intents.message_content = True
+bot = commands.Bot(command_prefix="!", intents=intents)
 
-# ========== USER COMMANDS ==========
-
-# !menu
-@bot.command()
-async def menu(ctx):
-    conn = get_db_connection()
-    with conn.cursor() as cursor:
-        cursor.execute("""
-            SELECT itemID, Name, Price 
-            FROM MenuTable 
-            WHERE isAvailable = TRUE
-        """)
-        items = cursor.fetchall()
-    conn.close()
-
-    if not items:
-        await ctx.send("Menu is currently empty.")
-    else:
-        response = "**Menu:**\n"
-        for item in items:
-            response += f"ID {item['itemID']}: {item['Name']} - ${item['Price']:.2f}\n"
-        await ctx.send(response)
-
-# !order
+# Commands (same as before)
 @bot.command()
 async def order(ctx, *item_ids):
-    if not item_ids:
-        await ctx.send("Please provide item IDs to order.")
-        return
-
     user = str(ctx.author.id)
     conn = get_db_connection()
     with conn.cursor() as cursor:
-        # Check or create customer
         cursor.execute("""
             SELECT customerID 
             FROM CustomerTable 
@@ -116,7 +88,6 @@ async def order(ctx, *item_ids):
 
     await ctx.send(f"Order placed successfully. Total: ${total_amount:.2f}")
 
-# !reserve
 @bot.command()
 async def reserve(ctx, date, time, party_size: int):
     user = str(ctx.author.id)
@@ -129,7 +100,6 @@ async def reserve(ctx, date, time, party_size: int):
 
     conn = get_db_connection()
     with conn.cursor() as cursor:
-        # Check or create customer
         cursor.execute("""
             SELECT customerID 
             FROM CustomerTable 
@@ -161,7 +131,6 @@ async def reserve(ctx, date, time, party_size: int):
 
     await ctx.send(f"Reservation made for {reservation_time} with {party_size} people.")
 
-# !feedback
 @bot.command()
 async def feedback(ctx, rating: int, *, comment):
     if rating < 1 or rating > 5:
@@ -180,9 +149,6 @@ async def feedback(ctx, rating: int, *, comment):
 
     await ctx.send("Thank you for your feedback!")
 
-# ========== ADMIN COMMANDS ==========
-
-# !add_item
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def add_item(ctx, name, price: float, *, description="No description."):
@@ -197,7 +163,6 @@ async def add_item(ctx, name, price: float, *, description="No description."):
 
     await ctx.send(f"Item '{name}' added to the menu.")
 
-# !remove_item
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def remove_item(ctx, item_id: int):
@@ -213,7 +178,6 @@ async def remove_item(ctx, item_id: int):
 
     await ctx.send(f"Item ID {item_id} marked as unavailable.")
 
-# !view_orders
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def view_orders(ctx):
@@ -236,11 +200,6 @@ async def view_orders(ctx):
             response += f"Order {order['orderID']} | Customer {order['customerID']} | ${order['totalAmount']:.2f} | Status: {order['status']}\n"
         await ctx.send(response)
 
-# !update_reservation
-
-
-
-# !export_sales
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def export_sales(ctx):
@@ -265,9 +224,29 @@ async def export_sales(ctx):
 
     await ctx.send(file=discord.File(filename))
 
-# !export_feedback
+# Bot setup
+intents = discord.Intents.default()
+intents.messages = True
+intents.message_content = True
+bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 
-
+@bot.command(name="help")
+async def bot_help(ctx):
+    help_text = (
+        "**User Commands:**\n"
+        "`!menu` - View the current menu\n"
+        "`!order [item_ids...]` - Place an order by item ID\n"
+        "`!reserve YYYY-MM-DD HH:MM party_size` - Make a reservation\n"
+        "`!feedback rating comment` - Leave a rating and comment\n\n"
+        "**Admin Commands:**\n"
+        "`!add_item name price description` - Add a new menu item\n"
+        "`!remove_item item_id` - Mark a menu item as unavailable\n"
+        "`!view_orders` - View the latest orders\n"
+        "`!update_reservation reservation_id status` - Update reservation status\n"
+        "`!export_sales` - Export a CSV of sales data\n"
+        "`!export_feedback` - Export a CSV of feedback data\n"
+    )
+    await ctx.send(help_text)
 
 # Run the bot
-bot.run(os.getenv("DISCORD_TOKEN"))
+bot.run(DISCORD_TOKEN)
