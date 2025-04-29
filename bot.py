@@ -6,7 +6,7 @@ import pymysql
 DISCORD_TOKEN = "MTM1OTM2NjY3ODExNDQ2NzkwMA.GosVbz.oF-BWPc_laD61wlzcon1n5vdNfeJfi0sTITeq0"
 MYSQL_HOST = "localhost"
 MYSQL_USER = "root"
-MYSQL_PASSWORD = "Cpsc408!"
+MYSQL_PASSWORD = "CPSC408!"
 MYSQL_DATABASE = "menu"
 
 # Database connection function
@@ -200,24 +200,35 @@ async def remove_item(ctx, item_id: int):
 @bot.command(name="view_orders")
 @commands.has_permissions(administrator=True)
 async def view_orders(ctx):
-    conn = get_db_connection()
-    with conn.cursor() as cursor:
-        cursor.execute("""
-            SELECT orderID, customerID, orderDate, totalAmount, status
-            FROM Orders
-            ORDER BY orderDate DESC
-            LIMIT 10
-        """)
-        orders = cursor.fetchall()
-    conn.close()
+    try:
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                SELECT orderID, customerID, orderDate, totalAmount, status
+                FROM Orders
+                ORDER BY orderDate DESC
+                LIMIT 10
+            """)
+            orders = cursor.fetchall()
+        conn.close()
 
-    if not orders:
-        await ctx.send("No orders found.")
-    else:
+        if not orders:
+            await ctx.send("No orders found.")
+            return
+
         response = "**Recent Orders:**\n"
         for order in orders:
             response += f"Order {order['orderID']} | Customer {order['customerID']} | ${order['totalAmount']:.2f} | Status: {order['status']}\n"
         await ctx.send(response)
+    except Exception as e:
+        await ctx.send(f"Error retrieving orders: {str(e)}")
+
+@view_orders.error
+async def view_orders_error(ctx, error):
+    if isinstance(error, commands.MissingPermissions):
+        await ctx.send("You need administrator permissions to use this command.")
+    else:
+        await ctx.send(f"An error occurred: {str(error)}")
 
 @bot.command(name="export_sales")
 @commands.has_permissions(administrator=True)
