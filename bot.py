@@ -3,7 +3,7 @@ from discord.ext import commands
 from datetime import datetime
 import pymysql
 
-DISCORD_TOKEN = "MTM1OTM2NjY3ODExNDQ2NzkwMA.GosVbz.oF-BWPc_laD61wlzcon1n5vdNfeJfi0sTITeq0"
+DISCORD_TOKEN = "INSERT YOUR TOKEN HERE"
 MYSQL_HOST = "localhost"
 MYSQL_USER = "root"
 MYSQL_PASSWORD = "Cpsc408!"
@@ -23,7 +23,28 @@ def get_db_connection():
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix=["!", "?"], intents=intents, help_command=None)
+
+# Commands
+@bot.command()
+async def menu(ctx):
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+        cursor.execute("""
+            SELECT itemID, Name, Price
+            FROM MenuTable
+            WHERE isAvailable = TRUE
+        """)
+        menu_items = cursor.fetchall()
+    conn.close()
+
+    if not menu_items:
+        await ctx.send("The menu is currently empty.")
+    else:
+        response = "**Menu:**\n"
+        for item in menu_items:
+            response += f"ID: {item['itemID']} | {item['Name']} - ${item['Price']:.2f}\n"
+        await ctx.send(response)
 
 @bot.command()
 async def order(ctx, *item_ids):
@@ -31,21 +52,21 @@ async def order(ctx, *item_ids):
     conn = get_db_connection()
     with conn.cursor() as cursor:
         cursor.execute("""
-            SELECT customerID 
-            FROM CustomerTable 
+            SELECT customerID
+            FROM CustomerTable
             WHERE discord_user_id = %s
         """, (user,))
         customer = cursor.fetchone()
 
         if not customer:
             cursor.execute("""
-                INSERT INTO CustomerTable (Name, Phone, discord_user_id) 
+                INSERT INTO CustomerTable (Name, Phone, discord_user_id)
                 VALUES (%s, %s, %s)
             """, (str(ctx.author), "N/A", user))
             conn.commit()
             cursor.execute("""
-                SELECT customerID 
-                FROM CustomerTable 
+                SELECT customerID
+                FROM CustomerTable
                 WHERE discord_user_id = %s
             """, (user,))
             customer = cursor.fetchone()
@@ -54,7 +75,7 @@ async def order(ctx, *item_ids):
 
         # Create order
         cursor.execute("""
-            INSERT INTO Orders (customerID, orderDate, totalAmount, status) 
+            INSERT INTO Orders (customerID, orderDate, totalAmount, status)
             VALUES (%s, NOW(), 0, 'Pending')
         """, (customer_id,))
         order_id = cursor.lastrowid
@@ -63,22 +84,22 @@ async def order(ctx, *item_ids):
         total_amount = 0.0
         for item_id in item_ids:
             cursor.execute("""
-                SELECT Price 
-                FROM MenuTable 
-                WHERE itemID = %s 
+                SELECT Price
+                FROM MenuTable
+                WHERE itemID = %s
                   AND isAvailable = TRUE
             """, (item_id,))
             item = cursor.fetchone()
             if item:
                 cursor.execute("""
-                    INSERT INTO OrderDetails (orderID, itemID, quantity) 
+                    INSERT INTO OrderDetails (orderID, itemID, quantity)
                     VALUES (%s, %s, 1)
                 """, (order_id, item_id))
                 total_amount += float(item['Price'])
 
         cursor.execute("""
-            UPDATE Orders 
-            SET totalAmount = %s 
+            UPDATE Orders
+            SET totalAmount = %s
             WHERE orderID = %s
         """, (total_amount, order_id))
         conn.commit()
@@ -99,21 +120,21 @@ async def reserve(ctx, date, time, party_size: int):
     conn = get_db_connection()
     with conn.cursor() as cursor:
         cursor.execute("""
-            SELECT customerID 
-            FROM CustomerTable 
+            SELECT customerID
+            FROM CustomerTable
             WHERE discord_user_id = %s
         """, (user,))
         customer = cursor.fetchone()
 
         if not customer:
             cursor.execute("""
-                INSERT INTO CustomerTable (Name, Phone, discord_user_id) 
+                INSERT INTO CustomerTable (Name, Phone, discord_user_id)
                 VALUES (%s, %s, %s)
             """, (str(ctx.author), "N/A", user))
             conn.commit()
             cursor.execute("""
-                SELECT customerID 
-                FROM CustomerTable 
+                SELECT customerID
+                FROM CustomerTable
                 WHERE discord_user_id = %s
             """, (user,))
             customer = cursor.fetchone()
@@ -121,7 +142,7 @@ async def reserve(ctx, date, time, party_size: int):
         customer_id = customer['customerID']
 
         cursor.execute("""
-            INSERT INTO Reservations (customerID, reservationTime, partySize, status) 
+            INSERT INTO Reservations (customerID, reservationTime, partySize, status)
             VALUES (%s, %s, %s, 'Pending')
         """, (customer_id, reservation_time, party_size))
         conn.commit()
@@ -167,8 +188,8 @@ async def remove_item(ctx, item_id: int):
     conn = get_db_connection()
     with conn.cursor() as cursor:
         cursor.execute("""
-            UPDATE MenuTable 
-            SET isAvailable = FALSE 
+            UPDATE MenuTable
+            SET isAvailable = FALSE
             WHERE itemID = %s
         """, (item_id,))
         conn.commit()
@@ -182,7 +203,7 @@ async def view_orders(ctx):
     conn = get_db_connection()
     with conn.cursor() as cursor:
         cursor.execute("""
-            SELECT orderID, customerID, orderDate, totalAmount, status 
+            SELECT orderID, customerID, orderDate, totalAmount, status
             FROM Orders
             ORDER BY orderDate DESC
             LIMIT 10
@@ -222,12 +243,6 @@ async def export_sales(ctx):
 
     await ctx.send(file=discord.File(filename))
 
-# Bot setup
-intents = discord.Intents.default()
-intents.messages = True
-intents.message_content = True
-bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
-
 @bot.command(name="help")
 async def bot_help(ctx):
     help_text = (
@@ -240,9 +255,7 @@ async def bot_help(ctx):
         "`!add_item name price description` - Add a new menu item\n"
         "`!remove_item item_id` - Mark a menu item as unavailable\n"
         "`!view_orders` - View the latest orders\n"
-        "`!update_reservation reservation_id status` - Update reservation status\n"
         "`!export_sales` - Export a CSV of sales data\n"
-        "`!export_feedback` - Export a CSV of feedback data\n"
     )
     await ctx.send(help_text)
 
