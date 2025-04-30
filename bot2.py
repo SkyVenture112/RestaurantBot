@@ -10,6 +10,7 @@ MYSQL_USER = "root"
 MYSQL_PASSWORD = "Cpsc408!"
 MYSQL_DATABASE = "menu"
 
+
 def get_db_connection():
     return pymysql.connect(
         host=MYSQL_HOST,
@@ -19,10 +20,12 @@ def get_db_connection():
         cursorclass=pymysql.cursors.DictCursor
     )
 
+
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 bot = commands.Bot(command_prefix=["!", "?"], intents=intents, help_command=None)
+
 
 # ===== Commands =====
 
@@ -42,51 +45,124 @@ async def menu(ctx):
             response += f"ID: {item['itemID']} | {item['Name']} - ${item['Price']:.2f}\n"
         await ctx.send(response)
 
+
 @bot.command()
-async def order(ctx, *item_ids):
+async def order(ctx):
     customer_name = f"DiscordUser_{ctx.author.id}"
-    conn = get_db_connection()
-    with conn.cursor() as cursor:
-        cursor.execute("SELECT customerID FROM CustomerTable WHERE Name = %s", (customer_name,))
-        customer = cursor.fetchone()
 
-        if customer:
-            customer_id = customer['customerID']
-        else:
-            cursor.execute("SELECT MAX(customerID) AS max_id FROM CustomerTable")
-            result = cursor.fetchone()
-            new_customer_id = (result['max_id'] or 0) + 1
-            cursor.execute("INSERT INTO CustomerTable (customerID, Name, Phone) VALUES (%s, %s, %s)", (new_customer_id, customer_name, "N/A"))
-            conn.commit()
-            customer_id = new_customer_id
+    while True:
+        # Fetch and display available items
+        conn = get_db_connection()
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT itemID, Name, Price FROM MenuTable WHERE isAvailable = TRUE")
+            menu_items = cursor.fetchall()
+        conn.close()
 
-        current_time = datetime.now()
-        cursor.execute("SELECT MAX(orderID) AS max_order_id FROM OrderTable")
-        result = cursor.fetchone()
-        new_order_id = (result['max_order_id'] or 0) + 1
-        cursor.execute("INSERT INTO OrderTable (orderID, orderDate, customerID, Status, totalAmount) VALUES (%s, %s, %s, 'Unfulfilled', 0.00)", (new_order_id, current_time, customer_id))
-        order_id = new_order_id
+        if not menu_items:
+            await ctx.send("The menu is currently empty.")
+            return
 
+        response = "**Available Items:**\n"
+        for item in menu_items:
+            response += f"ID: {item['itemID']} | {item['Name']} - ${item['Price']:.2f}\n"
+        response += "\nPlease enter the item IDs you want to order, separated by commas."
+        await ctx.send(response)
+
+        # Wait for user input
+        def check(m):
+            return m.author == ctx.author and m.channel == ctx.channel
+
+        try:
+            msg = await bot.wait_for("message", check=check, timeout=60.0)
+            item_ids = msg.content.split(",")
+            item_ids = [int(item.strip()) for item in item_ids if item.strip().isdigit()]
+        except Exception:
+            await ctx.send("You took too long to respond. Please try again.")
+            return
+
+        # Check availability of items
+        conn = get_db_connection()
+        unavailable_items = []
         total_price = 0.0
-        item_ids_clean = []
-        for raw in item_ids:
-            for part in raw.split(","):
-                part = part.strip()
-                if part.isdigit():
-                    item_ids_clean.append(int(part))
+        order_items = []
 
-        for item_id in item_ids_clean:
-            cursor.execute("SELECT itemID, Price FROM MenuTable WHERE itemID = %s AND isAvailable = TRUE", (item_id,))
-            item = cursor.fetchone()
-            if item:
-                cursor.execute("INSERT INTO OrderDetailsTable (orderID, itemID, Quantity) VALUES (%s, %s, 1)", (order_id, item_id))
-                total_price += item['Price']
+        with conn.cursor() as cursor:
+            for item_id in item_ids:
+                cursor.execute("SELECT itemID, Name, Price, isAvailable FROM MenuTable WHERE itemID = %s", (item_id,))
+                item = cursor.fetchone()
+                if item:
+                    if item['isAvailable']:
+                        order_items.append(item)
+                        total_price += float(item['Price'])
+                    else:
+                        unavailable_items.append(item['Name'])
+                else:
+                    unavailable_items.append(f"Item ID {item_id}")
 
-        cursor.execute("UPDATE OrderTable SET totalAmount = %s WHERE orderID = %s", (total_price, order_id))
-        conn.commit()
-    conn.close()
+        # If there are unavailable items, notify the user and restart the loop
+        if unavailable_items:
+            await ctx.send(
+                f"The following items are unavailable: {', '.join(unavailable_items)}. Please select from the available menu."
+            )
+            conn.close()
+            continue
 
-    await ctx.send(f"Order placed successfully! Total: **${total_price:.2f}** for Order ID {order_id}.")
+        # Place the order for available items
+        with conn.cursor() as cursor:
+            # Check if customer exists
+            cursor.execute("SELECT customerID FROM CustomerTable WHERE Name = %s", (customer_name,))
+            customer = cursor.fetchone()
+
+            if customer:
+                customer_id = customer['customerID']
+            else:
+                cursor.execute("SELECT MAX(customerID) AS max_id FROM CustomerTable")
+                result = cursor.fetchone()
+                new_customer_id = (result['max_id'] or 0) + 1
+                cursor.execute("INSERT INTO CustomerTable (customerID, Name, Phone) VALUES (%s, %s, %s)",
+                               (new_customer_id, customer_name, "N/A"))
+                conn.commit()
+                customer_id = new_customer_id
+
+            # Create a new order
+            current_time = datetime.now()
+            cursor.execute("SELECT MAX(orderID) AS max_order_id FROM OrderTable")
+            result = cursor.fetchone()
+            new_order_id = (result['max_order_id'] or 0) + 1
+            cursor.execute(
+                "INSERT INTO OrderTable (orderID, orderDate, customerID, Status, totalAmount) VALUES (%s, %s, %s, "
+                "'Unfulfilled', 0.00)",
+                (new_order_id, current_time, customer_id))
+            order_id = new_order_id
+
+            # Add items to the order and mark them as unavailable
+            for item in order_items:
+                cursor.execute("INSERT INTO OrderDetailsTable (orderID, itemID, Quantity) VALUES (%s, %s, 1)",
+                               (order_id, item['itemID']))
+                cursor.execute("UPDATE MenuTable SET isAvailable = 0 WHERE itemID = %s", (item['itemID'],))
+
+            # Update total price in the order
+            cursor.execute("UPDATE OrderTable SET totalAmount = %s WHERE orderID = %s", (total_price, order_id))
+            conn.commit()
+        conn.close()
+
+        # Notify the user of the successful order
+        response = f"Order placed successfully! Total: **${total_price:.2f}** for Order ID {order_id}."
+        await ctx.send(response)
+        break
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @bot.command()
 async def reserve(ctx, date, time, party_size: int):
@@ -109,18 +185,22 @@ async def reserve(ctx, date, time, party_size: int):
             cursor.execute("SELECT MAX(customerID) AS max_id FROM CustomerTable")
             result = cursor.fetchone()
             new_customer_id = (result['max_id'] or 0) + 1
-            cursor.execute("INSERT INTO CustomerTable (customerID, Name, Phone) VALUES (%s, %s, %s)", (new_customer_id, customer_name, "N/A"))
+            cursor.execute("INSERT INTO CustomerTable (customerID, Name, Phone) VALUES (%s, %s, %s)",
+                           (new_customer_id, customer_name, "N/A"))
             conn.commit()
             customer_id = new_customer_id
 
         cursor.execute("SELECT MAX(reservationID) AS max_res_id FROM ReservationTable")
         result = cursor.fetchone()
         new_reservation_id = (result['max_res_id'] or 0) + 1
-        cursor.execute("INSERT INTO ReservationTable (reservationID, reservationDate, customerID, time) VALUES (%s, %s, %s, %s)", (new_reservation_id, reservation_datetime.date(), customer_id, reservation_datetime.time()))
+        cursor.execute(
+            "INSERT INTO ReservationTable (reservationID, reservationDate, customerID, time) VALUES (%s, %s, %s, %s)",
+            (new_reservation_id, reservation_datetime.date(), customer_id, reservation_datetime.time()))
         conn.commit()
     conn.close()
 
     await ctx.send(f"Reservation made for {reservation_datetime.strftime('%Y-%m-%d %H:%M')} with {party_size} people.")
+
 
 @bot.command()
 async def feedback(ctx, rating: int, *, comment):
@@ -140,7 +220,8 @@ async def feedback(ctx, rating: int, *, comment):
             cursor.execute("SELECT MAX(customerID) AS max_id FROM CustomerTable")
             result = cursor.fetchone()
             new_customer_id = (result['max_id'] or 0) + 1
-            cursor.execute("INSERT INTO CustomerTable (customerID, Name, Phone) VALUES (%s, %s, %s)", (new_customer_id, customer_name, "N/A"))
+            cursor.execute("INSERT INTO CustomerTable (customerID, Name, Phone) VALUES (%s, %s, %s)",
+                           (new_customer_id, customer_name, "N/A"))
             conn.commit()
             customer_id = new_customer_id
 
@@ -148,11 +229,13 @@ async def feedback(ctx, rating: int, *, comment):
         result = cursor.fetchone()
         new_rating_id = (result['max_rating_id'] or 0) + 1
 
-        cursor.execute("INSERT INTO RatingTable (ratingID, customerID, Rating, Comment) VALUES (%s, %s, %s, %s)", (new_rating_id, customer_id, rating, comment))
+        cursor.execute("INSERT INTO RatingTable (ratingID, customerID, Rating, Comment) VALUES (%s, %s, %s, %s)",
+                       (new_rating_id, customer_id, rating, comment))
         conn.commit()
     conn.close()
 
     await ctx.send("Thank you for your feedback!")
+
 
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -177,6 +260,7 @@ async def view_orders(ctx):
             response += f"Order {order['orderID']} | {order['Name']} | ${order['totalAmount']:.2f} | Status: {order['Status']}\n"
         await ctx.send(response)
 
+
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def view_feedback(ctx):
@@ -198,6 +282,7 @@ async def view_feedback(ctx):
         for fb in feedbacks:
             response += f"{fb['Name']} rated {fb['Rating']}/5: \"{fb['Comment']}\"\n"
         await ctx.send(response)
+
 
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -221,24 +306,48 @@ async def view_reservations(ctx):
             response += f"Reservation {res['reservationID']} | {res['Name']} on {res['reservationDate']} at {res['time']}\n"
         await ctx.send(response)
 
+
+@bot.command(name="export_sales")
+@commands.has_permissions(administrator=True)
+async def export_sales(ctx):
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+        cursor.execute("""
+            SELECT * FROM Orders
+        """)
+        orders = cursor.fetchall()
+    conn.close()
+
+    if not orders:
+        await ctx.send("No sales to export.")
+        return
+
+    filename = "sales_report.csv"
+    with open(filename, "w") as f:
+        headers = orders[0].keys()
+        f.write(",".join(headers) + "\n")
+        for order in orders:
+            f.write(",".join([str(order[h]) for h in headers]) + "\n")
+
+    await ctx.send(file=discord.File(filename))
+
+
 @bot.command(name="help")
 async def bot_help(ctx):
     help_text = (
         "**User Commands:**\n"
-        "`!menu` - View the menu\n"
-        "`!order [item_ids...]` - Place an order (comma or space separated)\n"
+        "`!menu` - View the current menu\n"
+        "`!order [item_ids...]` - Place an order by item ID\n"
         "`!reserve YYYY-MM-DD HH:MM party_size` - Make a reservation\n"
-        "`!feedback rating comment` - Leave feedback\n"
-        "\n"
+        "`!feedback rating comment` - Leave a rating and comment\n\n"
         "**Admin Commands:**\n"
-        "`!view_orders` - View recent orders\n"
-        "`!view_reservations` - View upcoming reservations\n"
-        "`!view_feedback` - View customer feedback\n"
+        "`!add_item name price description` - Add a new menu item\n"
+        "`!remove_item item_id` - Mark a menu item as unavailable\n"
+        "`!view_orders` - View the latest orders\n"
+        "`!export_sales` - Export a CSV of sales data\n"
     )
     await ctx.send(help_text)
 
+
 # ===== Run Bot =====
 bot.run(DISCORD_TOKEN)
-
-
-
