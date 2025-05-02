@@ -272,7 +272,7 @@ async def export_sales(ctx):
     conn = get_db_connection()
     with conn.cursor() as cursor:
         cursor.execute("""
-            SELECT * FROM Orders
+            SELECT * FROM OrdersTable
         """)
         orders = cursor.fetchall()
     conn.close()
