@@ -307,6 +307,45 @@ async def feedback(ctx, rating: str, *, comment):
     conn.close()
     await ctx.send(" Thank you for your feedback!")
 
+
+
+@bot.command()
+async def popular_items(ctx):
+
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+        cursor.execute("""
+            SELECT v.itemID, 
+                   v.Name, 
+                   v.order_count, 
+                   v.total_quantity
+            FROM vPopularItems as v""")
+        
+
+    popular_items = cursor.fetchall()
+
+    conn.close()
+
+    if not popular_items:
+        await ctx.send("No order history available.")
+        return
+    
+    response = "**Most Popular Menu Items:**\n"
+    for item in popular_items:
+        avg_rating = item['avg_rating']
+        rating_str = f"⭐ {avg_rating:.1f}" if avg_rating else "No ratings"
+        
+        response += (
+            f"**{item['Name']}**\n"
+            f"Price: ${item['Price']:.2f} | "
+            f"Ordered {item['order_count']} times | "
+            f"Total quantity: {item['total_quantity']} | "
+            f"Rating: {rating_str}\n"
+    
+
+    await ctx.send(response)
+
+
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def mark_fulfilled(ctx, order_id: int):
@@ -467,6 +506,7 @@ async def bot_help(ctx):
         "`!order [item_ids...]` - Place an order (comma or space separated)\n"
         "`!reserve YYYY-MM-DD HH:MM party_size` - Make a reservation\n"
         "`!feedback rating comment` - Leave feedback\n"
+        "`!popular_items` - View most popular menu items\n"
         "\n"
         "**Admin Commands:**\n"
         "`!mark_fulfilled order_id` - Mark an order as fulfilled\n"
