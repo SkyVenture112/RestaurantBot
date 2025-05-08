@@ -310,18 +310,19 @@ async def feedback(ctx, rating: str, *, comment):
 
 
 @bot.command()
-async def popular_items(ctx):
-
+async def popular_items(ctx, limit: int = 3): 
     conn = get_db_connection()
     with conn.cursor() as cursor:
         cursor.execute("""
             SELECT v.itemID, 
-                   v.Name, 
-                   v.order_count, 
-                   v.total_quantity
-            FROM vPopularItems as v""")
+                   v.Name,
+                   v.Price, 
+                   v.order_count
+            FROM vPopularItems as v
+            ORDER BY v.order_count DESC
+            LIMIT %s
+        """, (limit,))
         
-
     popular_items = cursor.fetchall()
 
     conn.close()
@@ -330,21 +331,14 @@ async def popular_items(ctx):
         await ctx.send("No order history available.")
         return
     
-    response = "**Most Popular Menu Items:**\n"
+    response = f"**Top {limit} Most Popular Menu Items:**\n\n"
     for item in popular_items:
-        avg_rating = item['avg_rating']
-        rating_str = f"⭐ {avg_rating:.1f}" if avg_rating else "No ratings"
-        
         response += (
             f"**{item['Name']}**\n"
             f"Price: ${item['Price']:.2f} | "
-            f"Ordered {item['order_count']} times | "
-            f"Total quantity: {item['total_quantity']} | "
-            f"Rating: {rating_str}\n")
+            f"Ordered {item['order_count']} times\n")
     
-
     await ctx.send(response)
-
 
 @bot.command()
 @commands.has_permissions(administrator=True)
