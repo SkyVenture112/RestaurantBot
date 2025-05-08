@@ -340,7 +340,7 @@ async def popular_items(ctx):
             f"Price: ${item['Price']:.2f} | "
             f"Ordered {item['order_count']} times | "
             f"Total quantity: {item['total_quantity']} | "
-            f"Rating: {rating_str}\n"
+            f"Rating: {rating_str}\n")
     
 
     await ctx.send(response)
