@@ -310,7 +310,7 @@ async def feedback(ctx, rating: str, *, comment):
 
 
 @bot.command()
-async def popular_items(ctx, limit: int = 3): 
+async def popular_items(ctx, limit: int = 3): # Uses view vPopularItems created in database
     conn = get_db_connection()
     with conn.cursor() as cursor:
         cursor.execute("""
