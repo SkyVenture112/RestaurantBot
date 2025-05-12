@@ -10,6 +10,7 @@ MYSQL_USER = "root"
 MYSQL_PASSWORD = "Cpsc408!"
 MYSQL_DATABASE = "menu"
 
+
 def get_db_connection():
     return pymysql.connect(
         host=MYSQL_HOST,
@@ -19,10 +20,12 @@ def get_db_connection():
         cursorclass=pymysql.cursors.DictCursor
     )
 
+
 intents = discord.Intents.default()
 intents.messages = True
 intents.message_content = True
 bot = commands.Bot(command_prefix=["!", "?"], intents=intents, help_command=None)
+
 
 @bot.command()
 async def menu(ctx):
@@ -48,6 +51,7 @@ async def menu(ctx):
         for item in menu_items:
             response += f"ID: {item['itemID']} | {item['Name']} - ${item['Price']:.2f}\n"
         await ctx.send(response)
+
 
 @bot.command()
 async def order(ctx, *item_ids):
@@ -181,6 +185,7 @@ async def order(ctx, *item_ids):
 
     await ctx.send(f"Order placed successfully! Total: **${total_price:.2f}** for Order ID {order_id}.")
 
+
 @bot.command()
 async def reserve(ctx, date, time, party_size: int):
     customer_name = ctx.author.display_name
@@ -237,13 +242,16 @@ async def reserve(ctx, date, time, party_size: int):
                     ReservationTable (reservationID, reservationDate, customerID, time, partySize, status)
                 VALUES
                     (%s, %s, %s, %s, %s, 'Pending')
-            """, (new_reservation_id, reservation_datetime.date(), customer_id, reservation_datetime.time(), party_size))
+            """, (
+            new_reservation_id, reservation_datetime.date(), customer_id, reservation_datetime.time(), party_size))
             conn.commit()
 
         conn.close()
-        await ctx.send(f"Reservation successful! Reservation ID: **{new_reservation_id}**, Date: **{reservation_datetime.strftime('%Y-%m-%d')}**, Time: **{reservation_datetime.strftime('%H:%M')}**, Party Size: **{party_size}**.")
+        await ctx.send(
+            f"Reservation successful! Reservation ID: **{new_reservation_id}**, Date: **{reservation_datetime.strftime('%Y-%m-%d')}**, Time: **{reservation_datetime.strftime('%H:%M')}**, Party Size: **{party_size}**.")
     except Exception as e:
         await ctx.send(f"An error occurred: {str(e)}")
+
 
 @bot.command()
 async def feedback(ctx, rating: str, *, comment):
@@ -308,9 +316,8 @@ async def feedback(ctx, rating: str, *, comment):
     await ctx.send(" Thank you for your feedback!")
 
 
-
 @bot.command()
-async def popular_items(ctx, limit: int = 3): # Uses view vPopularItems created in database
+async def popular_items(ctx, limit: int = 3):  # Uses view vPopularItems created in database
     conn = get_db_connection()
     with conn.cursor() as cursor:
         cursor.execute("""
@@ -322,7 +329,7 @@ async def popular_items(ctx, limit: int = 3): # Uses view vPopularItems created 
             ORDER BY v.order_count DESC
             LIMIT %s
         """, (limit,))
-        
+
     popular_items = cursor.fetchall()
 
     conn.close()
@@ -330,15 +337,16 @@ async def popular_items(ctx, limit: int = 3): # Uses view vPopularItems created 
     if not popular_items:
         await ctx.send("No order history available.")
         return
-    
+
     response = f"**Top {limit} Most Popular Menu Items:**\n\n"
     for item in popular_items:
         response += (
             f"**{item['Name']}**\n"
             f"Price: ${item['Price']:.2f} | "
             f"Ordered {item['order_count']} times\n")
-    
+
     await ctx.send(response)
+
 
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -370,6 +378,7 @@ async def mark_fulfilled(ctx, order_id: int):
             await ctx.send(f"Order {order_id} marked as fulfilled.")
     conn.close()
 
+
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def export_sales(ctx):
@@ -395,7 +404,7 @@ async def export_sales(ctx):
 
 
 @bot.command()
-#@commands.has_permissions(administrator=True)
+# @commands.has_permissions(administrator=True)
 async def view_feedback(ctx):
     """View all feedback."""
     conn = get_db_connection()
@@ -431,7 +440,6 @@ async def view_feedback(ctx):
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def view_orders(ctx):
-    """View all orders."""
     conn = get_db_connection()
     with conn.cursor() as cursor:
         cursor.execute("""
@@ -458,7 +466,6 @@ async def view_orders(ctx):
                 f"Total: ${order['totalAmount']:.2f}\n"
             )
         await ctx.send(response)
-
 
 
 @bot.command()
@@ -492,6 +499,90 @@ async def ratings_summary(ctx):
             response += f"{row['Name']}: {row['avg_rating']:.2f}/5 from {row['total_reviews']} reviews\n"
         await ctx.send(response)
 
+
+@bot.command()
+async def cancel_order(ctx, order_id: int):
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+        cursor.execute("SELECT * FROM OrderTable WHERE orderID = %s", (order_id,))
+        order = cursor.fetchone()
+        if not order:
+            await ctx.send("Order not found.")
+        elif order['Status'] == 'Fulfilled':
+            await ctx.send("Cannot cancel a fulfilled order.")
+        else:
+            cursor.execute("""
+                UPDATE OrderTable
+                SET isCanceled = 1
+                WHERE orderID = %s
+            """, (order_id,))
+            conn.commit()
+            await ctx.send(f"Order {order_id} has been canceled.")
+    conn.close()
+
+
+@bot.command()
+#@commands.has_permissions(administrator=True)
+async def top_spender_on_expensive(ctx):
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+        cursor.execute("""
+            SELECT DISTINCT c.Name
+            FROM CustomerTable c
+            JOIN OrderTable o ON c.customerID = o.customerID
+            JOIN OrderDetailsTable d ON o.orderID = d.orderID
+            WHERE d.itemID = (
+                SELECT itemID FROM MenuTable ORDER BY Price DESC LIMIT 1
+            )
+        """)
+        customers = cursor.fetchall()
+    conn.close()
+
+    if customers:
+        names = ', '.join([c['Name'] for c in customers])
+        await ctx.send(f"Customers who ordered the most expensive item: {names}")
+    else:
+        await ctx.send("No one has ordered the most expensive item yet.")
+
+
+
+@bot.command()
+async def full_order_history(ctx):
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+        cursor.execute("""
+            SELECT
+                o.orderID,
+                c.Name AS customerName,
+                m.Name AS itemName,
+                d.Quantity,
+                o.orderDate
+            FROM OrderTable o
+            JOIN CustomerTable c ON o.customerID = c.customerID
+            JOIN OrderDetailsTable d ON o.orderID = d.orderID
+            JOIN MenuTable m ON d.itemID = m.itemID
+            ORDER BY o.orderDate DESC
+        """)
+        rows = cursor.fetchall()
+    conn.close()
+
+    if not rows:
+        await ctx.send("No orders found.")
+        return
+
+    response = "**Full Order History:**\n"
+    for row in rows:
+        response += (
+            f"Order ID: {row['orderID']} | Customer: {row['customerName']} | "
+            f"Item: {row['itemName']} x{row['Quantity']} | Date: {row['orderDate']}\n"
+        )
+
+    response_chunks = [response[i:i+2000] for i in range(0, len(response), 2000)]
+    for chunk in response_chunks:
+        await ctx.send(chunk)
+
+
+
 @bot.command(name="help")
 async def bot_help(ctx):
     help_text = (
@@ -500,13 +591,17 @@ async def bot_help(ctx):
         "`!order [item_ids...]` - Place an order (comma or space separated)\n"
         "`!reserve YYYY-MM-DD HH:MM party_size` - Make a reservation\n"
         "`!feedback rating comment` - Leave feedback\n"
-        "`!popular_items` - View most popular menu items\n"
+        "`!popular_items [limit]` - View the most popular menu items (default: top 3)\n"
+        "`!cancel_order order_id` - Cancel an order\n"
         "\n"
         "**Admin Commands:**\n"
         "`!mark_fulfilled order_id` - Mark an order as fulfilled\n"
         "`!export_sales` - Export sales data to CSV\n"
+        "`!view_feedback` - View all feedback\n"
+        "`!view_orders` - View all orders\n"
         "`!ratings_summary` - Show average customer ratings\n"
-        "`!view_orders`,`!view_feedback` - View latest data\n"
+        "`!top_spender_on_expensive` - View customers who ordered the most expensive item\n"
+        "`!full_order_history` - View the full order history\n"
     )
     await ctx.send(help_text)
 
