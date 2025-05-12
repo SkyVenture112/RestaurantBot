@@ -1,6 +1,6 @@
--- MySQL dump 10.13  Distrib 9.2.0, for Win64 (x86_64)
+-- MySQL dump 10.13  Distrib 9.3.0, for macos14.7 (arm64)
 --
--- Host: localhost    Database: menu
+-- Host: 127.0.0.1    Database: menu
 -- ------------------------------------------------------
 -- Server version	9.2.0
 
@@ -16,166 +16,176 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `customertable`
+-- Table structure for table `CustomerTable`
 --
 
-DROP TABLE IF EXISTS `customertable`;
+DROP TABLE IF EXISTS `CustomerTable`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `customertable` (
+CREATE TABLE `CustomerTable` (
   `customerID` int NOT NULL,
   `Name` varchar(100) DEFAULT NULL,
   `Phone` varchar(20) DEFAULT NULL,
-  PRIMARY KEY (`customerID`)
+  PRIMARY KEY (`customerID`),
+  KEY `idx_customer_name` (`Name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `customertable`
+-- Dumping data for table `CustomerTable`
 --
 
-LOCK TABLES `customertable` WRITE;
-/*!40000 ALTER TABLE `customertable` DISABLE KEYS */;
-INSERT INTO `customertable` VALUES (1,'Asher Maes','714-321-1241'),(2,'Tyler Hughes','714-124-4312'),(3,'Jerry Smith','714-121-1911'),(4,'John Cena','714-812-1241'),(5,'Barry Moore','714-813-1311'),(6,'DiscordUser_195227216689364993','N/A'),(7,'DiscordUser_258134397079781386','N/A');
-/*!40000 ALTER TABLE `customertable` ENABLE KEYS */;
+LOCK TABLES `CustomerTable` WRITE;
+/*!40000 ALTER TABLE `CustomerTable` DISABLE KEYS */;
+INSERT INTO `CustomerTable` VALUES (1,'Asher Maes','714-321-1241'),(2,'Tyler Hughes','714-124-4312'),(3,'Jerry Smith','714-121-1911'),(4,'John Cena','714-812-1241'),(5,'Barry Moore','714-813-1311'),(7,'Random Customer','N/A'),(8,'DiscordUser_334380770124627979','N/A'),(9,'DiscordUser_195227216689364993','N/A'),(10,'Restaurant Owner','N/A');
+/*!40000 ALTER TABLE `CustomerTable` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
--- Table structure for table `menutable`
+-- Table structure for table `MenuTable`
 --
 
-DROP TABLE IF EXISTS `menutable`;
+DROP TABLE IF EXISTS `MenuTable`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `menutable` (
+CREATE TABLE `MenuTable` (
   `itemID` int NOT NULL,
   `Name` varchar(100) DEFAULT NULL,
   `Price` decimal(5,2) DEFAULT NULL,
   `isAvailable` tinyint(1) DEFAULT NULL,
-  PRIMARY KEY (`itemID`)
+  `Category` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`itemID`),
+  KEY `idx_item_available` (`isAvailable`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `menutable`
+-- Dumping data for table `MenuTable`
 --
 
-LOCK TABLES `menutable` WRITE;
-/*!40000 ALTER TABLE `menutable` DISABLE KEYS */;
-INSERT INTO `menutable` VALUES (1,'Bistro Sandwich',14.00,0),(2,'Brie LT',14.00,0),(3,'Our Turkey Club',14.00,1),(4,'Super Missile',14.00,0),(5,'California Crab Cake Sandwich',10.75,0),(6,'Ham and Swiss Melt',14.00,1),(7,'Spinach Melt',14.00,1),(8,'Caprese',14.00,1),(9,'Caprese Melt',14.00,1),(10,'Smoked Salmon Sandwich',18.00,1),(11,'Mom\'s Choice Grilled Cheese',12.00,0),(12,'Gramma\'s Secret Grilled Cheese',12.00,1),(13,'Special Cheeser Grilled Cheese',14.00,1),(14,'Gourmet Grilled Cheese',15.00,1),(15,'Hot Stuff Grilled Cheese',14.00,1),(16,'Very Berry Salad',15.00,1),(17,'Chicken Caesar Salad',15.00,1),(18,'Ruth\'s Cobb Salad',15.00,1),(19,'Salmon Avocado Salad',18.00,1),(20,'Mixed Greens Salad',12.00,1);
-/*!40000 ALTER TABLE `menutable` ENABLE KEYS */;
+LOCK TABLES `MenuTable` WRITE;
+/*!40000 ALTER TABLE `MenuTable` DISABLE KEYS */;
+INSERT INTO `MenuTable` VALUES (1,'Bistro Sandwich',14.00,0,'Sandwich'),(2,'Brie LT',14.00,1,'Sandwich'),(3,'Our Turkey Club',14.00,0,'Sandwich'),(4,'Super Missile',14.00,1,'Hot Specialty'),(5,'California Crab Cake Sandwich',10.75,1,'Seafood Sandwich'),(6,'Ham and Swiss Melt',14.00,1,'Melt'),(7,'Spinach Melt',14.00,1,'Melt'),(8,'Caprese',14.00,1,'Vegetarian Sandwich'),(9,'Caprese Melt',14.00,1,'Vegetarian Melt'),(10,'Smoked Salmon Sandwich',18.00,1,'Seafood Sandwich'),(11,'Mom\'s Choice Grilled Cheese',12.00,1,'Grilled Cheese'),(12,'Gramma\'s Secret Grilled Cheese',12.00,1,'Grilled Cheese'),(13,'Special Cheeser Grilled Cheese',14.00,1,'Grilled Cheese'),(14,'Gourmet Grilled Cheese',15.00,1,'Grilled Cheese'),(15,'Hot Stuff Grilled Cheese',14.00,1,'Grilled Cheese'),(16,'Very Berry Salad',15.00,1,'Salad'),(17,'Chicken Caesar Salad',15.00,1,'Salad'),(18,'Ruth\'s Cobb Salad',15.00,1,'Salad'),(19,'Salmon Avocado Salad',18.00,1,'Seafood Salad'),(20,'Mixed Greens Salad',12.00,1,'Salad'),(21,'SIGMA COMBO',69.99,1,'Sandwich');
+/*!40000 ALTER TABLE `MenuTable` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
--- Table structure for table `orderdetailstable`
+-- Table structure for table `OrderDetailsTable`
 --
 
-DROP TABLE IF EXISTS `orderdetailstable`;
+DROP TABLE IF EXISTS `OrderDetailsTable`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `orderdetailstable` (
+CREATE TABLE `OrderDetailsTable` (
   `orderID` int NOT NULL,
   `itemID` int NOT NULL,
   `Quantity` int DEFAULT NULL,
+  `priceAtOrder` decimal(10,2) DEFAULT NULL,
   PRIMARY KEY (`orderID`,`itemID`),
   KEY `itemID` (`itemID`),
-  CONSTRAINT `orderdetailstable_ibfk_1` FOREIGN KEY (`orderID`) REFERENCES `ordertable` (`orderID`),
-  CONSTRAINT `orderdetailstable_ibfk_2` FOREIGN KEY (`itemID`) REFERENCES `menutable` (`itemID`)
+  CONSTRAINT `orderdetailstable_ibfk_1` FOREIGN KEY (`orderID`) REFERENCES `OrderTable` (`orderID`),
+  CONSTRAINT `orderdetailstable_ibfk_2` FOREIGN KEY (`itemID`) REFERENCES `MenuTable` (`itemID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `orderdetailstable`
+-- Dumping data for table `OrderDetailsTable`
 --
 
-LOCK TABLES `orderdetailstable` WRITE;
-/*!40000 ALTER TABLE `orderdetailstable` DISABLE KEYS */;
-INSERT INTO `orderdetailstable` VALUES (1,1,5),(1,2,2),(2,3,1),(2,4,3),(5,5,2),(6,1,1),(6,2,1),(7,4,1),(7,5,1),(8,11,1);
-/*!40000 ALTER TABLE `orderdetailstable` ENABLE KEYS */;
+LOCK TABLES `OrderDetailsTable` WRITE;
+/*!40000 ALTER TABLE `OrderDetailsTable` DISABLE KEYS */;
+INSERT INTO `OrderDetailsTable` VALUES (1,1,5,NULL),(1,2,2,NULL),(2,3,1,NULL),(2,4,3,NULL),(5,5,2,NULL),(6,2,1,NULL),(10,4,1,NULL),(11,3,1,542.00),(12,3,1,234.00),(13,3,1,999.00),(14,1,1,36.00),(15,3,1,28.00),(16,1,1,14.00),(17,2,1,14.00),(18,5,1,10.75),(19,19,1,18.00),(20,4,1,14.00),(20,5,1,10.75),(20,6,1,14.00),(21,21,1,69.99),(22,15,1,14.00),(22,16,1,15.00),(22,17,1,15.00),(22,18,1,15.00),(22,19,1,18.00),(22,20,1,12.00),(23,1,1,14.00),(24,3,1,14.00);
+/*!40000 ALTER TABLE `OrderDetailsTable` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
--- Table structure for table `ordertable`
+-- Table structure for table `OrderTable`
 --
 
-DROP TABLE IF EXISTS `ordertable`;
+DROP TABLE IF EXISTS `OrderTable`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `ordertable` (
+CREATE TABLE `OrderTable` (
   `orderID` int NOT NULL,
   `orderDate` date DEFAULT NULL,
   `customerID` int DEFAULT NULL,
   `Status` enum('Fulfilled','Unfulfilled') DEFAULT NULL,
-  `totalAmount` decimal(10,2) DEFAULT '0.00',
+  `totalAmount` decimal(10,2) DEFAULT NULL,
+  `fulfilledTime` datetime DEFAULT NULL,
+  `isCanceled` int DEFAULT '0',
   PRIMARY KEY (`orderID`),
   KEY `customerID` (`customerID`),
-  CONSTRAINT `ordertable_ibfk_1` FOREIGN KEY (`customerID`) REFERENCES `customertable` (`customerID`)
+  KEY `idx_order_customer` (`customerID`),
+  CONSTRAINT `ordertable_ibfk_1` FOREIGN KEY (`customerID`) REFERENCES `CustomerTable` (`customerID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `ordertable`
+-- Dumping data for table `OrderTable`
 --
 
-LOCK TABLES `ordertable` WRITE;
-/*!40000 ALTER TABLE `ordertable` DISABLE KEYS */;
-INSERT INTO `ordertable` VALUES (1,'2024-11-02',1,'Fulfilled',9.99),(2,'2024-11-03',1,'Fulfilled',5.99),(3,'2024-12-15',2,'Unfulfilled',2.99),(4,'2025-02-03',3,'Fulfilled',3.99),(5,'2025-04-16',4,'Fulfilled',3.99),(6,'2025-04-30',6,'Unfulfilled',28.00),(7,'2025-04-30',6,'Unfulfilled',24.75),(8,'2025-04-30',7,'Unfulfilled',12.00);
-/*!40000 ALTER TABLE `ordertable` ENABLE KEYS */;
+LOCK TABLES `OrderTable` WRITE;
+/*!40000 ALTER TABLE `OrderTable` DISABLE KEYS */;
+INSERT INTO `OrderTable` VALUES (1,'2024-11-02',1,'Fulfilled',98.00,NULL,0),(2,'2024-11-03',1,'Fulfilled',56.00,NULL,0),(3,'2024-12-15',2,'Fulfilled',8.99,'2025-05-05 16:08:11',0),(4,'2025-02-03',3,'Fulfilled',50.99,NULL,0),(5,'2025-04-16',4,'Fulfilled',21.50,NULL,0),(6,'2025-04-28',8,'Unfulfilled',14.00,NULL,0),(7,'2025-04-29',8,'Unfulfilled',0.00,NULL,0),(8,'2025-04-29',8,'Unfulfilled',0.00,NULL,0),(9,'2025-04-29',8,'Unfulfilled',0.00,NULL,0),(10,'2025-04-29',8,'Unfulfilled',14.00,NULL,0),(11,'2025-04-29',8,'Unfulfilled',14.00,NULL,0),(12,'2025-04-29',8,'Unfulfilled',14.00,NULL,0),(13,'2025-04-29',8,'Unfulfilled',14.00,NULL,0),(14,'2025-04-29',8,'Unfulfilled',14.00,NULL,0),(15,'2025-04-29',8,'Unfulfilled',14.00,NULL,0),(16,'2025-05-03',8,'Unfulfilled',14.00,NULL,0),(17,'2025-05-05',8,'Unfulfilled',14.00,NULL,0),(18,'2025-05-05',9,'Unfulfilled',10.75,NULL,0),(19,'2025-05-05',7,'Unfulfilled',18.00,NULL,0),(20,'2025-05-05',10,'Unfulfilled',38.75,NULL,0),(21,'2025-05-05',10,'Unfulfilled',69.99,NULL,0),(22,'2025-05-05',10,'Unfulfilled',89.00,NULL,0),(23,'2025-05-05',7,'Unfulfilled',14.00,NULL,0),(24,'2025-05-12',7,'Unfulfilled',14.00,NULL,0);
+/*!40000 ALTER TABLE `OrderTable` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
--- Table structure for table `ratingtable`
+-- Table structure for table `RatingTable`
 --
 
-DROP TABLE IF EXISTS `ratingtable`;
+DROP TABLE IF EXISTS `RatingTable`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `ratingtable` (
+CREATE TABLE `RatingTable` (
   `ratingID` int NOT NULL,
   `customerID` int DEFAULT NULL,
   `Rating` decimal(2,1) DEFAULT NULL,
   `Comment` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`ratingID`),
   KEY `customerID` (`customerID`),
-  CONSTRAINT `ratingtable_ibfk_1` FOREIGN KEY (`customerID`) REFERENCES `customertable` (`customerID`)
+  CONSTRAINT `ratingtable_ibfk_1` FOREIGN KEY (`customerID`) REFERENCES `CustomerTable` (`customerID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `ratingtable`
+-- Dumping data for table `RatingTable`
 --
 
-LOCK TABLES `ratingtable` WRITE;
-/*!40000 ALTER TABLE `ratingtable` DISABLE KEYS */;
-INSERT INTO `ratingtable` VALUES (1,1,3.5,'Not bad'),(2,2,4.5,'Great'),(3,3,4.0,'Awesome'),(4,4,4.0,'Amazing'),(5,5,5.0,'Perfect');
-/*!40000 ALTER TABLE `ratingtable` ENABLE KEYS */;
+LOCK TABLES `RatingTable` WRITE;
+/*!40000 ALTER TABLE `RatingTable` DISABLE KEYS */;
+INSERT INTO `RatingTable` VALUES (1,1,3.5,'Not bad'),(2,2,4.5,'Great'),(3,3,4.0,'Awesome'),(4,4,4.0,'Amazing'),(5,5,5.0,'Perfect'),(6,8,5.0,'fire food'),(7,8,5.0,'food is fire'),(8,7,5.0,'good'),(9,7,5.0,'good');
+/*!40000 ALTER TABLE `RatingTable` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
--- Table structure for table `reservationtable`
+-- Table structure for table `ReservationTable`
 --
 
-DROP TABLE IF EXISTS `reservationtable`;
+DROP TABLE IF EXISTS `ReservationTable`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `reservationtable` (
+CREATE TABLE `ReservationTable` (
   `reservationID` int NOT NULL,
   `reservationDate` date DEFAULT NULL,
   `customerID` int DEFAULT NULL,
+  `time` time DEFAULT NULL,
+  `partySize` int DEFAULT '1',
+  `status` varchar(50) DEFAULT 'Pending',
   PRIMARY KEY (`reservationID`),
   KEY `customerID` (`customerID`),
-  CONSTRAINT `reservationtable_ibfk_1` FOREIGN KEY (`customerID`) REFERENCES `customertable` (`customerID`)
+  CONSTRAINT `reservationtable_ibfk_1` FOREIGN KEY (`customerID`) REFERENCES `CustomerTable` (`customerID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `reservationtable`
+-- Dumping data for table `ReservationTable`
 --
 
-LOCK TABLES `reservationtable` WRITE;
-/*!40000 ALTER TABLE `reservationtable` DISABLE KEYS */;
-INSERT INTO `reservationtable` VALUES (1,'2024-11-02',1),(2,'2024-11-03',2),(3,'2024-12-15',3),(4,'2025-02-03',4),(5,'2025-04-16',5);
-/*!40000 ALTER TABLE `reservationtable` ENABLE KEYS */;
+LOCK TABLES `ReservationTable` WRITE;
+/*!40000 ALTER TABLE `ReservationTable` DISABLE KEYS */;
+INSERT INTO `ReservationTable` VALUES (1,'2024-11-02',1,'03:54:51',1,'Pending'),(2,'2024-11-03',2,'01:54:48',1,'Pending'),(3,'2024-12-15',3,'02:54:45',1,'Pending'),(4,'2025-02-03',4,'03:54:42',1,'Pending'),(5,'2025-04-16',5,'15:54:38',1,'Pending'),(6,'2023-12-25',8,'18:30:00',4,'Pending'),(7,'2025-01-02',9,'14:30:00',1,'Pending');
+/*!40000 ALTER TABLE `ReservationTable` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -221,4 +231,4 @@ SET character_set_client = @saved_cs_client;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-05-07 17:36:20
+-- Dump completed on 2025-05-12 16:33:48
