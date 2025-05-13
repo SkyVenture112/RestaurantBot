@@ -322,10 +322,10 @@ async def popular_items(ctx, limit: int = 3):
     with conn.cursor() as cursor:
         cursor.execute("""CREATE VIEW vPopularItems AS
                     SELECT menutable.itemID,
-                    menutable.Name, 
-                    menutable.Price,
-                    COUNT(OrderDetailsTable.itemID) as order_count,
-                    SUM(OrderDetailsTable.Quantity) as total_quantity
+                        menutable.Name, 
+                        menutable.Price,
+                        COUNT(OrderDetailsTable.itemID) as order_count,
+                        SUM(OrderDetailsTable.Quantity) as total_quantity
                     FROM menutable
                     LEFT JOIN OrderDetailsTable ON menutable.itemID = OrderDetailsTable.itemID
                     GROUP BY menutable.itemID, menutable.Name, menutable.Price;
