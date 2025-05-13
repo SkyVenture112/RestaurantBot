@@ -317,35 +317,39 @@ async def feedback(ctx, rating: str, *, comment):
 
 
 @bot.command()
-async def popular_items(ctx, limit: int = 3):  # Uses view vPopularItems created in database
+async def popular_items(ctx, limit: int = 3): 
     conn = get_db_connection()
     with conn.cursor() as cursor:
-        cursor.execute("""
-            SELECT v.itemID, 
-                   v.Name,
-                   v.Price, 
-                   v.order_count
-            FROM vPopularItems as v
-            ORDER BY v.order_count DESC
-            LIMIT %s
-        """, (limit,))
-
-    popular_items = cursor.fetchall()
-
-    conn.close()
-
-    if not popular_items:
-        await ctx.send("No order history available.")
-        return
-
-    response = f"**Top {limit} Most Popular Menu Items:**\n\n"
-    for item in popular_items:
-        response += (
-            f"**{item['Name']}**\n"
-            f"Price: ${item['Price']:.2f} | "
-            f"Ordered {item['order_count']} times\n")
-
-    await ctx.send(response)
+        cursor.execute("""CREATE VIEW vPopularItems AS
+                    SELECT menutable.itemID,
+                    menutable.Name, 
+                    menutable.Price,
+                    COUNT(OrderDetailsTable.itemID) as order_count,
+                    SUM(OrderDetailsTable.Quantity) as total_quantity
+                    FROM menutable
+                    LEFT JOIN OrderDetailsTable ON menutable.itemID = OrderDetailsTable.itemID
+                    GROUP BY menutable.itemID, menutable.Name, menutable.Price;
+                    
+                    SELECT v.itemID,
+                            v.Name,
+                            v.Price,
+                            v.order_count
+                            FROM vPopularItems as v
+                            ORDER BY v.order_count DESC 
+                            LIMIT %s""", (limit,))
+        
+        popular_items = cursor.fetchall()
+        conn.close() 
+        
+        if not popular_items:
+            await ctx.send("No order history available.")
+            return
+        
+        response = f"**Top {limit} Most Popular Menu Items:**\n\n"
+        for item in popular_items:
+            response += (f"**{item['Name']}**\n"f"Price: ${item['Price']:.2f} | "f"Ordered {item['order_count']} times\n")
+        
+        await ctx.send(response)
 
 
 @bot.command()
