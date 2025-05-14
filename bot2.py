@@ -57,37 +57,32 @@ async def menu(ctx):
 async def order(ctx, *item_ids):
     customer_name = ctx.author.display_name
     conn = get_db_connection()
+    
+    conn.begin()
     unavailable_items = []
     available_menu = []
 
     with conn.cursor() as cursor:
         cursor.execute("""
-            SELECT
-                itemID,
-                Name
-            FROM
-                MenuTable
-            WHERE
-                isAvailable = TRUE
+            SELECT itemID, Name
+            FROM MenuTable
+            WHERE isAvailable = TRUE
         """)
         available_menu = cursor.fetchall()
 
         for item_id in item_ids:
             cursor.execute("""
-                SELECT
-                    itemID,
-                    Name,
-                    isAvailable
-                FROM
-                    MenuTable
-                WHERE
-                    itemID = %s
+                SELECT itemID, Name, isAvailable
+                FROM MenuTable
+                WHERE itemID = %s
             """, (item_id,))
             item = cursor.fetchone()
             if not item or not item['isAvailable']:
                 unavailable_items.append(item_id)
 
         if unavailable_items:
+            conn.rollback()
+            conn.close()
             unavailable_message = f"The following items are out of stock: {', '.join(map(str, unavailable_items))}\n"
             available_message = "**Available items:**\n"
             for menu_item in available_menu:
@@ -122,7 +117,6 @@ async def order(ctx, *item_ids):
                 VALUES
                     (%s, %s, %s)
             """, (new_customer_id, customer_name, "N/A"))
-            conn.commit()
             customer_id = new_customer_id
 
         current_time = datetime.now()
@@ -181,9 +175,8 @@ async def order(ctx, *item_ids):
                 orderID = %s
         """, (total_price, order_id))
         conn.commit()
-    conn.close()
-
-    await ctx.send(f"Order placed successfully! Total: **${total_price:.2f}** for Order ID {order_id}.")
+        conn.close()
+        await ctx.send(f"Order placed successfully! Total: **${total_price:.2f}** for Order ID {order_id}.")
 
 
 @bot.command()
