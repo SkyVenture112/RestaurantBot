@@ -14,8 +14,8 @@ Tyler Momani (momani@chapman.edu) and Jack Dippel (dippel@chapman.edu)
 
 Our Discord bot implements many of the features typically found in a MySQL database. Here is an non-exhaustive list:
 
-* Displays records from the tables (``!view_menu``)
-* Queries for data within the tables using a variety of different parameters (``!popular_items``, which utilizes a limit to the amount of records it returns)
+* Displays records from database tables (``!view_menu``)
+* Queries for data within the database tables using a variety of different parameters (``!popular_items``, which utilizes a limit to the amount of records it returns)
 * Creates new records (``!order``, ``!feedback``, ``!reserve``)
 * Deletes records (``!cancel_order``)
 * Updates records (``!mark_fulfilled``)
