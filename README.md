@@ -1,5 +1,5 @@
 # Restaurant Bot
-A Discord bot that utilizes a MySQL database to manage restaurant reservations.
+A Discord bot that utilizes a MySQL database to manage restaurant reservations. Users are able to order food items, make restaurant reservations, and leave reviews. Server administrators are able to mark orders as being fulfilled, cancel orders, and review past and present orders, as well as feedback.
 
 ## Authors
 Tyler Momani (momani@chapman.edu) and Jack Dippel (dippel@chapman.edu)
@@ -30,21 +30,23 @@ Our Discord bot implements many of the features typically found in a MySQL datab
 * Utilizes a database view (``!popular_items``)
 * Utilizes multiple different entities (Customers, Orders, Reservations, Ratings, Menu Items)
 
+In order to list all available commands, the ``!help`` command can be sent in the server. Further details about the functionalities of each individual command can be found in the documentation of the source files ``user_commands.py`` and ``admin_commands.py``.
+
 
 ## Execution Instructions
 
-Once the Discord bot has been invited to a server, it can be run by doing the following:
+Once the Discord bot has been invited to a server, it can be run by following the below steps:
 
-* Ensure a local version of MySQL is running by executing the command
+1. Ensure a local version of MySQL is running by executing the command
 ``bash
 mysql -u root -p
 ``. Connect the menu database to LocalHost.
 
 
-* Run the command
+2. Run the command
 ``bash
 python bot.py
-``
+``.
 
 
 
