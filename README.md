@@ -38,9 +38,8 @@ Once the Discord bot has been invited to a server, it can be run by doing the fo
 * Ensure a local version of MySQL is running by executing the command
 ``bash
 mysql -u root -p
-``
+``. Connect the menu database to LocalHost.
 
-(It is also necessary to connect the menu database to LocalHost so that no errors arise.)
 
 * Run the command
 ``bash
