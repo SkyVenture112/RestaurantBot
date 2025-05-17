@@ -5,6 +5,8 @@ from db import get_db_connection
 
 
 def register(bot):
+    
+    # Marks an order as being fulfilled
     @bot.command()
     @commands.has_permissions(administrator=True)
     async def mark_fulfilled(ctx, order_id: int):
@@ -28,6 +30,7 @@ def register(bot):
                 await ctx.send(f"Order {order_id} marked as fulfilled.")
         conn.close()
 
+    # Exports a .csv file of all of the past orders
     @bot.command()
     @commands.has_permissions(administrator=True)
     async def export_sales(ctx):
@@ -51,6 +54,7 @@ def register(bot):
         conn.close()
         await ctx.send(file=discord.File(filename))
 
+    # Shows all of the past user reviews
     @bot.command()
     async def view_feedback(ctx):
         conn = get_db_connection()
@@ -74,6 +78,7 @@ def register(bot):
                 )
             await ctx.send(response)
 
+    # Shows all of the past user orders
     @bot.command()
     @commands.has_permissions(administrator=True)
     async def view_orders(ctx):
@@ -98,6 +103,7 @@ def register(bot):
                 )
             await ctx.send(response)
 
+    # Outputs an aggregation of all of the past reviews by customer name
     @bot.command()
     @commands.has_permissions(administrator=True)
     async def ratings_summary(ctx):
@@ -121,6 +127,7 @@ def register(bot):
                 response += f"{row['Name']}: {row['avg_rating']:.2f}/5 from {row['total_reviews']} reviews\n"
             await ctx.send(response)
 
+    # Cancels an existing order
     @bot.command()
     async def cancel_order(ctx, order_id: int):
         conn = get_db_connection()
@@ -145,6 +152,7 @@ def register(bot):
                 await ctx.send(f"Order {order_id} has been canceled.")
         conn.close()
 
+    # Outputs the customer who has spent the most money
     @bot.command()
     async def top_spender_on_expensive(ctx):
         conn = get_db_connection()
@@ -170,6 +178,7 @@ def register(bot):
         else:
             await ctx.send("No one has ordered the most expensive item yet.")
 
+    # Outputs a complete history of all of the past orders
     @bot.command()
     async def full_order_history(ctx):
         conn = get_db_connection()
