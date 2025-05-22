@@ -208,3 +208,42 @@ def register(bot):
         response_chunks = [response[i:i + 2000] for i in range(0, len(response), 2000)]
         for chunk in response_chunks:
             await ctx.send(chunk)
+
+
+# outputs a spending report containing all cusotmers and total amount spent
+@bot.command()
+@commands.has_permissions(administrator=True)=
+async def spending_report(ctx):
+    conn = get_db_connection()
+    with conn.cursor() as cursor:
+        cursor.execute("""
+            SELECT c.Name AS customerName,
+                m.Name AS itemName,
+                SUM(d.Quantity) AS totalQuantityOrdered,
+                SUM(d.Quantity * d.priceAtOrder) AS totalSpent
+            FROM CustomerTable c
+            JOIN OrderTable o ON c.customerID = o.customerID
+            JOIN OrderDetailsTable d ON o.orderID = d.orderID
+            JOIN MenuTable m ON d.itemID = m.itemID
+            GROUP BY c.Name, m.Name
+            ORDER BY totalSpent DESC;
+        """)
+        results = cursor.fetchall()
+    conn.close()
+
+    if not results:
+        await ctx.send("No spending data found.")
+        return
+
+    response = "**Customer Spending Report:**\n"
+    for row in results:
+        qty = row['totalQuantityOrdered'] or 0
+        spent = row['totalSpent'] or 0.0
+        response += (
+            f"Customer: {row['customerName']} | "
+            f"Item: {row['itemName']} | "
+            f"Qty: {qty} | "
+            f"Spent: ${spent:.2f}\n"
+        )
+
+
