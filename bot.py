@@ -58,6 +58,7 @@ async def bot_help(ctx):
         "`!view_orders` - View all orders\n"
         "`!ratings_summary` - Show average customer ratings\n"
         "`!top_spender_on_expensive` - View who ordered the most expensive item\n"
+        "`!spending_report` - View a report of customer spending\n"
     )
     await ctx.send(help_text)
 
